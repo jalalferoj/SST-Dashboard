@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SST Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-black min-h-screen p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">SST Analytics Dashboard</h1>
+
+    <div id="dropzone" class="dropzone relative border-2 border-dashed border-cyan-600 rounded-2xl p-10 text-center cursor-pointer">
+      <input id="fileInput" type="file" accept=".csv,.xls,.xlsx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+      <div class="flex flex-col items-center gap-4 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-12 h-12 text-slate-600"><path fill="currentColor" d="M12 3a5 5 0 0 0-5 5v1H6a4 4 0 0 0 0 8h3v-2H6a2 2 0 1 1 0-4h1v1a5 5 0 1 0 10 0V8a5 5 0 0 0-5-5m-1 9V8h2v4h3l-4 4l-4-4z"/></svg>
+        <p class="text-lg font-semibold">Drag & drop your CSV/Excel here</p>
+        <p class="text-sm text-slate-600">or click to select a file</p>
+      </div>
+    </div>
+
+    <div id="preview" class="mt-8 hidden">
+      <h2 class="text-2xl font-semibold mb-4">Data Preview</h2>
+      <div class="overflow-auto border border-slate-300 rounded-lg">
+        <table id="dataTable" class="min-w-full text-sm"></table>
+      </div>
+    </div>
+
+    <div id="analysis" class="mt-8 hidden">
+      <h2 class="text-2xl font-semibold mb-4">Analysis & Visualization Suggestions</h2>
+      <div id="charts" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+  </div>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const dataTable = document.getElementById("dataTable");
+const analysis = document.getElementById("analysis");
+const chartsDiv = document.getElementById("charts");
+
+fileInput.addEventListener("change", handleFile);
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  if (file.name.endsWith(".csv")) {
+    Papa.parse(file, {
+      header: true,
+      dynamicTyping: true,
+      complete: function(results) {
+        displayData(results.data);
+        analyzeData(results.data);
+      }
+    });
+  } else {
+    reader.onload = function(event) {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+      displayData(jsonData);
+      analyzeData(jsonData);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function displayData(data) {
+  preview.classList.remove("hidden");
+  dataTable.innerHTML = "";
+  if (data.length === 0) return;
+
+  const headers = Object.keys(data[0]);
+  let thead = `<thead class='bg-slate-200'><tr>${headers.map(h=>`<th class='px-4 py-2 text-left'>${h}</th>`).join("")}</tr></thead>`;
+  let tbody = "<tbody>";
+  data.slice(0, 10).forEach(row => {
+    tbody += `<tr class='border-t border-slate-300'>${headers.map(h=>`<td class='px-4 py-1'>${row[h]}</td>`).join("")}</tr>`;
+  });
+  tbody += "</tbody>";
+
+  dataTable.innerHTML = thead + tbody;
+}
+
+function analyzeData(data) {
+  analysis.classList.remove("hidden");
+  chartsDiv.innerHTML = "";
+
+  if (data.length === 0) return;
+  const headers = Object.keys(data[0]);
+
+  headers.forEach(col => {
+    const values = data.map(r => r[col]).filter(v => v !== null && v !== "" && !isNaN(v));
+    if (values.length > 0) {
+      const chartId = `chart_${col}`;
+      const container = document.createElement("div");
+      container.className = "bg-white border border-slate-300 rounded-xl p-4 shadow";
+
+      const canvas = document.createElement("canvas");
+      canvas.id = chartId;
+      container.appendChild(canvas);
+
+      chartsDiv.appendChild(container);
+
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: values.slice(0,20).map((_,i)=>i+1),
+          datasets: [{
+            label: col,
+            data: values.slice(0,20),
+            backgroundColor: 'rgba(34,211,238,0.6)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: `Distribution of ${col}` }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+      container.style.height = "300px";
+    }
+  });
+}
+</script>
+</body>
+</html>
