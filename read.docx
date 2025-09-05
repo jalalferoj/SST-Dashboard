@@ -1,0 +1,86 @@
+Create a one-page HTML dashboard and a web app with html css and java script that allows you to upload any files and dynamically visualize the following key metrics:
+Dashboard Features to Include:
+1.	Open & Monthly Closed Status – Summary cards
+2.	Open Average Ticket Duration – Bar chart
+3.	Month-to-Date Closed Ticket Comparison – Horizontal bar chart
+4.	Average Monthly Survey Results – Table
+5.	Open Service Calls – Breached 2x – Pie chart
+6.	Open Tickets by SST Location – Bar chart
+7.	Closed Service Call Deadline – Pie chart
+8.	Closed Tickets by SST Location – Bar chart
+9.	Open Tickets – Extended 3x – Pie chart
+10.	Open SC by Requestor Location – Bar chart
+11.	Monthly Closed Tickets by Ticket Type – Multi-month bar chart
+Use:
+•	HTML + CSS (Bootstrap for styling)
+•	JavaScript (Chart.js for charts, PapaParse for CSV parsing)
+________________________________________
+✅ Columns in Your File:
+•	Registered, Item type, ID, Description, Priority
+•	Modified, Deadline, Status (Service Today)
+•	To workgroup, Requestor Site, Requestor
+•	Revised_Deadline, To person, Modified by
+•	From person, Entered by person
+•	Requestor Building/Room, Requestor E-mail
+•	Template, Requestor Division
+🧠 Next Step:
+I’ll now generate a modern one-page HTML dashboard that:
+•	Lets you upload Excel/CSV files
+•	Automatically parses and visualizes key metrics like: 
+o	Ticket status (open/closed)
+o	Ticket types and priorities
+o	Locations and requestors
+o	Breach and extension stats
+o	Survey results (if available)
+You’ll be able to open this HTML file in any browser and interact with your data.
+Your enhanced dark-mode dashboard is ready! 
+Features Add:
+•	Theme Toggle Button: Switch between dark and light modes instantly.
+•	Reset Button: Clears all charts and file input for a fresh start.
+•	Supports all file formats.
+1.	Filters for:
+o	Date range
+o	Priority
+o	Status
+2.	Export Charts:
+o	Save as PNG or PDF
+3.	Summary Statistics:
+o	Average resolution time
+o	Breach rate
+o	Ticket volume trends
+4.	Interactive Map:
+o	Visualize ticket locations geographically
+5.	Drill-down Views:
+o	Click on chart elements to see detailed ticket data
+6.	User Authentication:
+o	Secure access for different roles (admin, viewer, etc.)
+7.	Live Data Integration:
+•	Connect to APIs or databases for real-time updates
+Supports .xlsx, .csv, and .txt file uploads
+•	New Charts: 
+o	Deadline breaches
+o	Average ticket durations
+o	Open service call breached
+o	Weekly & monthly closed status
+o	Closed tickets by location
+o	Open ticket extended
+o	Ticket nature by description
+•	Dark Mode styling with Bootstrap 5
+o	
+________________________________________
+•  Integrate these charts into a single interactive HTML dashboard? 
+•  Add filter controls and export buttons
+Package this into a web app (e.g., Flask or Streamlit) for easier deployment
+
+
+To Run the Dashboard:
+1.	Make sure you have Python installed.
+2.	Install required packages: 
+3.	Place the dashboard_app.py file in the same directory as your dashboard_assets folder.
+4.	Run the app: 
+5.	Open your browser and go to http://localhost:8050
+
+
+
+
+
