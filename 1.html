@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Service Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { padding: 20px; background-color: #121212; color: #fff; }
+        .chart-container { margin-top: 30px; }
+        canvas { background-color: #1e1e1e; padding: 10px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Enhanced Service Dashboard</h1>
+        <div class="mb-3">
+            <label for="fileInput" class="form-label">Upload CSV, TXT, or Excel File</label>
+            <input class="form-control" type="file" id="fileInput" accept=".csv,.txt,.xlsx">
+        </div>
+
+        <div id="charts" class="row row-cols-1 row-cols-md-2 g-4">
+            <div class="col"><canvas id="statusChart"></canvas></div>
+            <div class="col"><canvas id="priorityChart"></canvas></div>
+            <div class="col"><canvas id="typeChart"></canvas></div>
+            <div class="col"><canvas id="siteChart"></canvas></div>
+            <div class="col"><canvas id="deadlineChart"></canvas></div>
+            <div class="col"><canvas id="durationChart"></canvas></div>
+            <div class="col"><canvas id="weeklyClosedChart"></canvas></div>
+            <div class="col"><canvas id="monthlyClosedChart"></canvas></div>
+            <div class="col"><canvas id="locationClosedChart"></canvas></div>
+            <div class="col"><canvas id="extendedChart"></canvas></div>
+            <div class="col"><canvas id="descriptionChart"></canvas></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+
+            if (file.name.endsWith('.xlsx')) {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    processData(json);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        processData(results.data);
+                    }
+                });
+            }
+        });
+
+        function processData(data) {
+            const statusCounts = {}, priorityCounts = {}, typeCounts = {}, siteCounts = {}, deadlineCounts = {}, durationCounts = {}, weeklyCounts = {}, monthlyCounts = {}, locationClosedCounts = {}, extendedCounts = {}, descriptionCounts = {};
+
+            data.forEach(row => {
+                const status = row['Status (Service Today)'];
+                const priority = row['Priority'];
+                const type = row['Item type'];
+                const site = row['Requestor Site  '];
+                const deadline = row['Deadline'];
+                const modified = row['Modified'];
+                const description = row['Description'];
+
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+                priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+                typeCounts[type] = (typeCounts[type] || 0) + 1;
+                siteCounts[site] = (siteCounts[site] || 0) + 1;
+
+                if (deadline && modified) {
+                    const d1 = new Date(modified);
+                    const d2 = new Date(deadline);
+                    const duration = (d2 - d1) / (1000 * 60 * 60 * 24);
+                    const durationKey = duration > 0 ? Math.round(duration) + ' days' : 'Past Due';
+                    durationCounts[durationKey] = (durationCounts[durationKey] || 0) + 1;
+
+                    const deadlineKey = d2 < new Date() ? 'Breached' : 'Compliant';
+                    deadlineCounts[deadlineKey] = (deadlineCounts[deadlineKey] || 0) + 1;
+
+                    const week = 'Week ' + d2.getWeek();
+                    weeklyCounts[week] = (weeklyCounts[week] || 0) + 1;
+
+                    const month = d2.toLocaleString('default', { month: 'short', year: 'numeric' });
+                    monthlyCounts[month] = (monthlyCounts[month] || 0) + 1;
+                }
+
+                const location = row['To workgroup  '];
+                locationClosedCounts[location] = (locationClosedCounts[location] || 0) + 1;
+
+                const extended = row['Revised_Deadline'] ? 'Extended' : 'Not Extended';
+                extendedCounts[extended] = (extendedCounts[extended] || 0) + 1;
+
+                if (description) {
+                    const key = description.split(' ')[0];
+                    descriptionCounts[key] = (descriptionCounts[key] || 0) + 1;
+                }
+            });
+
+            renderChart('statusChart', 'Ticket Status', statusCounts);
+            renderChart('priorityChart', 'Priority Distribution', priorityCounts);
+            renderChart('typeChart', 'Item Type Distribution', typeCounts);
+            renderChart('siteChart', 'Requestor Site Distribution', siteCounts);
+            renderChart('deadlineChart', 'Deadline Compliance', deadlineCounts);
+            renderChart('durationChart', 'Average Ticket Duration', durationCounts);
+            renderChart('weeklyClosedChart', 'Weekly Closed Tickets', weeklyCounts);
+            renderChart('monthlyClosedChart', 'Monthly Closed Tickets', monthlyCounts);
+            renderChart('locationClosedChart', 'Closed Tickets by Location', locationClosedCounts);
+            renderChart('extendedChart', 'Open Ticket Extended', extendedCounts);
+            renderChart('descriptionChart', 'Ticket Nature by Description', descriptionCounts);
+        }
+
+        Date.prototype.getWeek = function() {
+            const onejan = new Date(this.getFullYear(),0,1);
+            return Math.ceil((((this - onejan) / 86400000) + onejan.getDay()+1)/7);
+        }
+
+        function renderChart(canvasId, label, dataObj) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dataObj),
+                    datasets: [{
+                        label: label,
+                        data: Object.values(dataObj),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: label }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
