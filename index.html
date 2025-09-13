@@ -2,136 +2,240 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SST Analytics Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SST Analytics Pro - Advanced Data Visualization Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+    .hover-lift { transition: all 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .loading-spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .chart-container { position: relative; height: 350px; }
+    .dropzone-active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.05); }
+    .notification { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+  </style>
 </head>
-<body class="bg-white text-black min-h-screen p-6">
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">SST Analytics Dashboard</h1>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+  <!-- Navigation Header -->
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-chart-line text-white text-sm"></i>
+          </div>
+          <h1 class="text-xl font-bold text-gray-900">SST Analytics Pro</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button id="exportBtn" class="hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>Export Report
+          </button>
+          <button class="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-    <div id="dropzone" class="dropzone relative border-2 border-dashed border-cyan-600 rounded-2xl p-10 text-center cursor-pointer">
-      <input id="fileInput" type="file" accept=".csv,.xls,.xlsx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-      <div class="flex flex-col items-center gap-4 pointer-events-none">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-12 h-12 text-slate-600"><path fill="currentColor" d="M12 3a5 5 0 0 0-5 5v1H6a4 4 0 0 0 0 8h3v-2H6a2 2 0 1 1 0-4h1v1a5 5 0 1 0 10 0V8a5 5 0 0 0-5-5m-1 9V8h2v4h3l-4 4l-4-4z"/></svg>
-        <p class="text-lg font-semibold">Drag & drop your CSV/Excel here</p>
-        <p class="text-sm text-slate-600">or click to select a file</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Transform Your Data Into Insights</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">Upload your CSV or Excel files and get instant, professional visualizations with advanced analytics capabilities.</p>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="mb-12">
+      <div id="dropzone" class="dropzone relative border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover-lift transition-all duration-300 bg-white">
+        <input id="fileInput" type="file" accept=".csv,.xls,.xlsx" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        <div class="flex flex-col items-center gap-6 pointer-events-none">
+          <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-cloud-upload-alt text-white text-2xl"></i>
+          </div>
+          <div>
+            <p class="text-2xl font-semibold text-gray-900 mb-2">Drop your files here</p>
+            <p class="text-gray-600">or click to browse • Supports CSV, XLS, XLSX • Multiple files supported</p>
+          </div>
+          <div class="flex items-center space-x-6 text-sm text-gray-500">
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-shield-alt text-green-500"></i>
+              <span>Secure Processing</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-bolt text-yellow-500"></i>
+              <span>Instant Analysis</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-chart-bar text-blue-500"></i>
+              <span>Smart Visualizations</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div id="preview" class="mt-8 hidden">
-      <h2 class="text-2xl font-semibold mb-4">Data Preview</h2>
-      <div class="overflow-auto border border-slate-300 rounded-lg">
-        <table id="dataTable" class="min-w-full text-sm"></table>
+    <!-- Loading State -->
+    <div id="loadingState" class="hidden text-center py-12">
+      <div class="inline-flex items-center space-x-3">
+        <div class="loading-spinner w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
+        <span class="text-lg font-medium text-gray-700">Processing your data...</span>
       </div>
     </div>
 
-    <div id="analysis" class="mt-8 hidden">
-      <h2 class="text-2xl font-semibold mb-4">Analysis & Visualization Suggestions</h2>
-      <div id="charts" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    <!-- Data Summary Cards -->
+    <div id="summaryCards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl p-6 shadow-sm hover-lift">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Total Records</p>
+            <p id="totalRecords" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-database text-blue-600"></i>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 shadow-sm hover-lift">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Columns</p>
+            <p id="totalColumns" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-columns text-green-600"></i>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 shadow-sm hover-lift">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Numeric Fields</p>
+            <p id="numericFields" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-calculator text-purple-600"></i>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 shadow-sm hover-lift">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Data Quality</p>
+            <p id="dataQuality" class="text-2xl font-bold text-gray-900">0%</p>
+          </div>
+          <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-check-circle text-orange-600"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Preview -->
+    <div id="preview" class="hidden mb-8 fade-in">
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Data Preview</h3>
+          <div class="flex items-center space-x-3">
+            <span id="previewInfo" class="text-sm text-gray-600"></span>
+            <button id="togglePreview" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              Show All Columns
+            </button>
+          </div>
+        </div>
+        <div class="overflow-auto max-h-96">
+          <table id="dataTable" class="min-w-full divide-y divide-gray-200"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Controls -->
+    <div id="analysisControls" class="hidden mb-8">
+      <div class="bg-white rounded-xl p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Visualization Controls</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
+            <select id="chartTypeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="auto">Auto-detect Best Chart</option>
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="pie">Pie Chart</option>
+              <option value="scatter">Scatter Plot</option>
+              <option value="histogram">Histogram</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color Scheme</label>
+            <select id="colorScheme" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="blue">Professional Blue</option>
+              <option value="gradient">Modern Gradient</option>
+              <option value="vibrant">Vibrant Colors</option>
+              <option value="monochrome">Monochrome</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Animation</label>
+            <select id="animationSpeed" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="1000">Smooth (1s)</option>
+              <option value="500">Fast (0.5s)</option>
+              <option value="0">Instant</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div id="analysis" class="hidden fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-bold text-gray-900">Smart Visualizations</h3>
+        <div class="flex items-center space-x-3">
+          <button id="refreshCharts" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>Refresh
+          </button>
+          <button id="fullscreenMode" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-expand mr-2"></i>Fullscreen
+          </button>
+        </div>
+      </div>
+      <div id="charts" class="grid grid-cols-1 lg:grid-cols-2 gap-8"></div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div id="statisticsPanel" class="hidden mt-8 fade-in">
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistical Summary</h3>
+        <div id="statisticsContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
     </div>
   </div>
 
-<script>
-const fileInput = document.getElementById("fileInput");
-const preview = document.getElementById("preview");
-const dataTable = document.getElementById("dataTable");
-const analysis = document.getElementById("analysis");
-const chartsDiv = document.getElementById("charts");
+  <!-- Notification Container -->
+  <div id="notifications" class="notification"></div>
 
-fileInput.addEventListener("change", handleFile);
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-gray-600">© 2025 SST Analytics Pro. Professional data visualization made simple.</p>
+      </div>
+    </div>
+  </footer>
 
-function handleFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  if (file.name.endsWith(".csv")) {
-    Papa.parse(file, {
-      header: true,
-      dynamicTyping: true,
-      complete: function(results) {
-        displayData(results.data);
-        analyzeData(results.data);
-      }
-    });
-  } else {
-    reader.onload = function(event) {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-      displayData(jsonData);
-      analyzeData(jsonData);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-}
-
-function displayData(data) {
-  preview.classList.remove("hidden");
-  dataTable.innerHTML = "";
-  if (data.length === 0) return;
-
-  const headers = Object.keys(data[0]);
-  let thead = `<thead class='bg-slate-200'><tr>${headers.map(h=>`<th class='px-4 py-2 text-left'>${h}</th>`).join("")}</tr></thead>`;
-  let tbody = "<tbody>";
-  data.slice(0, 10).forEach(row => {
-    tbody += `<tr class='border-t border-slate-300'>${headers.map(h=>`<td class='px-4 py-1'>${row[h]}</td>`).join("")}</tr>`;
-  });
-  tbody += "</tbody>";
-
-  dataTable.innerHTML = thead + tbody;
-}
-
-function analyzeData(data) {
-  analysis.classList.remove("hidden");
-  chartsDiv.innerHTML = "";
-
-  if (data.length === 0) return;
-  const headers = Object.keys(data[0]);
-
-  headers.forEach(col => {
-    const values = data.map(r => r[col]).filter(v => v !== null && v !== "" && !isNaN(v));
-    if (values.length > 0) {
-      const chartId = `chart_${col}`;
-      const container = document.createElement("div");
-      container.className = "bg-white border border-slate-300 rounded-xl p-4 shadow";
-
-      const canvas = document.createElement("canvas");
-      canvas.id = chartId;
-      container.appendChild(canvas);
-
-      chartsDiv.appendChild(container);
-
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: values.slice(0,20).map((_,i)=>i+1),
-          datasets: [{
-            label: col,
-            data: values.slice(0,20),
-            backgroundColor: 'rgba(34,211,238,0.6)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: { display: true, text: `Distribution of ${col}` }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-      container.style.height = "300px";
-    }
-  });
-}
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
