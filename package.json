@@ -6,10 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
     "start": "npx http-server . -p 8080",
-    "build": "echo 'Build complete - static files ready for deployment'",
-    "preview": "npx http-server . -p 4173"
   },
   "keywords": [
     "data-visualization",
