@@ -17,24 +17,31 @@ const statisticsPanel = document.getElementById("statisticsPanel");
 
 // Color schemes
 const colorSchemes = {
-  blue: ['#3B82F6', '#1E40AF', '#60A5FA', '#93C5FD', '#DBEAFE'],
-  gradient: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe'],
-  vibrant: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],
-  monochrome: ['#374151', '#6B7280', '#9CA3AF', '#D1D5DB', '#F3F4F6']
+  blue: ['#3B82F6', '#1E40AF', '#60A5FA', '#93C5FD', '#DBEAFE', '#1D4ED8', '#2563EB'],
+  gradient: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b'],
+  vibrant: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'],
+  monochrome: ['#374151', '#6B7280', '#9CA3AF', '#D1D5DB', '#F3F4F6', '#111827', '#4B5563']
 };
 
 // Event listeners
-fileInput.addEventListener("change", handleFileSelect);
-dropzone.addEventListener("dragover", handleDragOver);
-dropzone.addEventListener("dragleave", handleDragLeave);
-dropzone.addEventListener("drop", handleDrop);
+document.addEventListener("DOMContentLoaded", function() {
+  initializeEventListeners();
+  console.log("SST Analytics Pro initialized");
+});
 
-document.getElementById("chartTypeSelect").addEventListener("change", refreshVisualizations);
-document.getElementById("colorScheme").addEventListener("change", refreshVisualizations);
-document.getElementById("animationSpeed").addEventListener("change", refreshVisualizations);
-document.getElementById("refreshCharts").addEventListener("click", refreshVisualizations);
-document.getElementById("fullscreenMode").addEventListener("click", toggleFullscreen);
-document.getElementById("exportBtn").addEventListener("click", exportReport);
+function initializeEventListeners() {
+  fileInput.addEventListener("change", handleFileSelect);
+  dropzone.addEventListener("dragover", handleDragOver);
+  dropzone.addEventListener("dragleave", handleDragLeave);
+  dropzone.addEventListener("drop", handleDrop);
+
+  document.getElementById("chartTypeSelect").addEventListener("change", refreshVisualizations);
+  document.getElementById("colorScheme").addEventListener("change", refreshVisualizations);
+  document.getElementById("animationSpeed").addEventListener("change", refreshVisualizations);
+  document.getElementById("refreshCharts").addEventListener("click", refreshVisualizations);
+  document.getElementById("fullscreenMode").addEventListener("click", toggleFullscreen);
+  document.getElementById("exportBtn").addEventListener("click", exportReport);
+}
 
 // Drag and drop handlers
 function handleDragOver(e) {
@@ -66,7 +73,6 @@ function processFiles(files) {
   showLoading(true);
   showNotification("Processing files...", "info");
   
-  // Process first file for now (can be extended for multiple files)
   const file = files[0];
   
   if (!isValidFileType(file)) {
@@ -75,13 +81,11 @@ function processFiles(files) {
     return;
   }
   
-  if (file.size > 50 * 1024 * 1024) { // 50MB limit
+  if (file.size > 50 * 1024 * 1024) {
     showNotification("File size too large. Please upload files smaller than 50MB", "error");
     showLoading(false);
     return;
   }
-  
-  const reader = new FileReader();
   
   if (file.name.toLowerCase().endsWith(".csv")) {
     Papa.parse(file, {
@@ -100,6 +104,7 @@ function processFiles(files) {
       }
     });
   } else {
+    const reader = new FileReader();
     reader.onload = function(event) {
       try {
         const data = new Uint8Array(event.target.result);
@@ -132,7 +137,6 @@ function processData(data, filename) {
     return;
   }
   
-  // Clean and validate data
   currentData = cleanData(data);
   
   if (currentData.length === 0) {
@@ -149,24 +153,20 @@ function processData(data, filename) {
   generateStatistics();
   showNotification(`Successfully loaded ${currentData.length} records from ${filename}`, "success");
   
-  // Show export button
   document.getElementById("exportBtn").classList.remove("hidden");
 }
 
 function cleanData(data) {
   return data.filter(row => {
-    // Remove completely empty rows
     return Object.values(row).some(value => 
       value !== null && value !== undefined && value !== ""
     );
   }).map(row => {
-    // Clean individual values
     const cleanedRow = {};
     Object.keys(row).forEach(key => {
       let value = row[key];
       if (typeof value === 'string') {
         value = value.trim();
-        // Try to convert numeric strings
         if (!isNaN(value) && value !== '') {
           value = parseFloat(value);
         }
@@ -216,20 +216,17 @@ function displayDataPreview() {
   if (currentData.length === 0) return;
   
   const headers = Object.keys(currentData[0]);
-  const displayHeaders = headers.slice(0, 8); // Show first 8 columns initially
+  const displayHeaders = headers.slice(0, 8);
   
-  // Update preview info
   document.getElementById("previewInfo").textContent = 
     `Showing ${Math.min(10, currentData.length)} of ${currentData.length} rows`;
   
-  // Create table header
   let thead = `<thead class="bg-gray-50">
     <tr>
       ${displayHeaders.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join("")}
     </tr>
   </thead>`;
   
-  // Create table body
   let tbody = "<tbody class='bg-white divide-y divide-gray-200'>";
   currentData.slice(0, 10).forEach((row, index) => {
     tbody += `<tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
@@ -271,7 +268,7 @@ function getCategoricalColumns() {
     if (numericColumns.includes(header)) return false;
     
     const uniqueValues = [...new Set(currentData.map(row => row[header]))].filter(v => v !== null && v !== "" && v !== undefined);
-    return uniqueValues.length > 1 && uniqueValues.length <= 20; // Reasonable number of categories
+    return uniqueValues.length > 1 && uniqueValues.length <= 20;
   });
 }
 
@@ -279,8 +276,12 @@ function generateVisualizations() {
   analysis.classList.remove("hidden");
   chartsDiv.innerHTML = "";
   
-  // Clear existing charts
-  currentCharts.forEach(chart => chart.destroy());
+  // Destroy existing charts
+  currentCharts.forEach(chart => {
+    if (chart && typeof chart.destroy === 'function') {
+      chart.destroy();
+    }
+  });
   currentCharts = [];
   
   const numericColumns = getNumericColumns();
@@ -294,8 +295,8 @@ function generateVisualizations() {
     return;
   }
   
-  // Generate different types of charts
-  numericColumns.slice(0, 6).forEach((column, index) => {
+  // Generate charts for numeric columns
+  numericColumns.slice(0, 4).forEach((column, index) => {
     createChart(column, chartType, colorScheme, animationDuration, index);
   });
   
@@ -311,12 +312,9 @@ function generateVisualizations() {
 }
 
 function createChart(column, chartType, colorScheme, animationDuration, index) {
-  const chartId = `chart_${column.replace(/\s+/g, '_')}_${index}`;
+  const chartId = `chart_${column.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
   const container = document.createElement("div");
   container.className = "bg-white rounded-xl shadow-sm p-6 hover-lift";
-  
-  const canvas = document.createElement("canvas");
-  canvas.id = chartId;
   
   const header = document.createElement("div");
   header.className = "flex items-center justify-between mb-4";
@@ -326,22 +324,39 @@ function createChart(column, chartType, colorScheme, animationDuration, index) {
       <button class="text-gray-400 hover:text-gray-600" onclick="downloadChart('${chartId}')">
         <i class="fas fa-download"></i>
       </button>
-      <button class="text-gray-400 hover:text-gray-600" onclick="expandChart('${chartId}')">
-        <i class="fas fa-expand"></i>
-      </button>
     </div>
   `;
   
+  const chartContainer = document.createElement("div");
+  chartContainer.className = "chart-container";
+  chartContainer.style.height = "300px";
+  chartContainer.style.position = "relative";
+  
+  const canvas = document.createElement("canvas");
+  canvas.id = chartId;
+  
+  chartContainer.appendChild(canvas);
   container.appendChild(header);
-  container.appendChild(canvas);
+  container.appendChild(chartContainer);
   chartsDiv.appendChild(container);
   
-  const values = currentData.map(row => row[column]).filter(v => v !== null && v !== undefined && !isNaN(v));
-  const colors = colorSchemes[colorScheme];
+  // Get values and filter out invalid data
+  const values = currentData.map(row => row[column])
+    .filter(v => v !== null && v !== undefined && !isNaN(v) && isFinite(v));
   
-  let config;
+  if (values.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-gray-500">No valid data for ${column}</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const colors = colorSchemes[colorScheme];
   const detectedChartType = chartType === 'auto' ? detectBestChartType(values) : chartType;
   
+  let config;
   switch (detectedChartType) {
     case 'histogram':
       config = createHistogramConfig(values, colors, animationDuration, column);
@@ -356,8 +371,18 @@ function createChart(column, chartType, colorScheme, animationDuration, index) {
       config = createBarConfig(values, colors, animationDuration, column);
   }
   
-  const chart = new Chart(canvas, config);
-  currentCharts.push(chart);
+  try {
+    const ctx = canvas.getContext('2d');
+    const chart = new Chart(ctx, config);
+    currentCharts.push(chart);
+  } catch (error) {
+    console.error('Error creating chart:', error);
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-red-500">Error creating chart for ${column}</p>
+      </div>
+    `;
+  }
 }
 
 function detectBestChartType(values) {
@@ -367,13 +392,16 @@ function detectBestChartType(values) {
 }
 
 function createBarConfig(values, colors, animationDuration, column) {
+  const maxValues = 20;
+  const displayValues = values.slice(0, maxValues);
+  
   return {
     type: 'bar',
     data: {
-      labels: values.slice(0, 20).map((_, i) => `Record ${i + 1}`),
+      labels: displayValues.map((_, i) => `Item ${i + 1}`),
       datasets: [{
         label: column,
-        data: values.slice(0, 20),
+        data: displayValues,
         backgroundColor: colors[0] + '80',
         borderColor: colors[0],
         borderWidth: 2,
@@ -425,8 +453,8 @@ function createLineConfig(values, colors, animationDuration, column) {
         pointBackgroundColor: colors[0],
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6
+        pointRadius: 3,
+        pointHoverRadius: 5
       }]
     },
     options: {
@@ -501,6 +529,62 @@ function createHistogramConfig(values, colors, animationDuration, column) {
   };
 }
 
+function createPieConfig(values, colors, animationDuration, column) {
+  // Group values into ranges for pie chart
+  const ranges = createValueRanges(values, 5);
+  
+  return {
+    type: 'pie',
+    data: {
+      labels: ranges.map(r => r.label),
+      datasets: [{
+        data: ranges.map(r => r.count),
+        backgroundColor: colors.slice(0, ranges.length),
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: animationDuration },
+      plugins: {
+        legend: { 
+          position: 'bottom',
+          labels: { color: '#6B7280' }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: 'white',
+          bodyColor: 'white'
+        }
+      }
+    }
+  };
+}
+
+function createValueRanges(values, rangeCount) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const rangeSize = (max - min) / rangeCount;
+  
+  const ranges = [];
+  for (let i = 0; i < rangeCount; i++) {
+    const rangeMin = min + i * rangeSize;
+    const rangeMax = min + (i + 1) * rangeSize;
+    const count = values.filter(v => v >= rangeMin && (i === rangeCount - 1 ? v <= rangeMax : v < rangeMax)).length;
+    
+    if (count > 0) {
+      ranges.push({
+        label: `${rangeMin.toFixed(1)}-${rangeMax.toFixed(1)}`,
+        count: count
+      });
+    }
+  }
+  
+  return ranges;
+}
+
 function createHistogramBins(values, binCount) {
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -522,9 +606,6 @@ function createCorrelationChart(columns, colorScheme, animationDuration) {
   const container = document.createElement("div");
   container.className = "bg-white rounded-xl shadow-sm p-6 hover-lift lg:col-span-2";
   
-  const canvas = document.createElement("canvas");
-  canvas.id = chartId;
-  
   const header = document.createElement("div");
   header.className = "flex items-center justify-between mb-4";
   header.innerHTML = `
@@ -536,14 +617,36 @@ function createCorrelationChart(columns, colorScheme, animationDuration) {
     </div>
   `;
   
+  const chartContainer = document.createElement("div");
+  chartContainer.className = "chart-container";
+  chartContainer.style.height = "300px";
+  chartContainer.style.position = "relative";
+  
+  const canvas = document.createElement("canvas");
+  canvas.id = chartId;
+  
+  chartContainer.appendChild(canvas);
   container.appendChild(header);
-  container.appendChild(canvas);
+  container.appendChild(chartContainer);
   chartsDiv.appendChild(container);
   
-  const xValues = currentData.map(row => row[columns[0]]).filter(v => v !== null && !isNaN(v));
-  const yValues = currentData.map(row => row[columns[1]]).filter(v => v !== null && !isNaN(v));
+  const scatterData = currentData.map(row => ({
+    x: row[columns[0]],
+    y: row[columns[1]]
+  })).filter(point => 
+    point.x !== null && point.y !== null && 
+    !isNaN(point.x) && !isNaN(point.y) &&
+    isFinite(point.x) && isFinite(point.y)
+  );
   
-  const scatterData = xValues.map((x, i) => ({ x, y: yValues[i] })).filter(point => point.y !== undefined);
+  if (scatterData.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-gray-500">No valid data for correlation analysis</p>
+      </div>
+    `;
+    return;
+  }
   
   const colors = colorSchemes[colorScheme];
   
@@ -587,17 +690,19 @@ function createCorrelationChart(columns, colorScheme, animationDuration) {
     }
   };
   
-  const chart = new Chart(canvas, config);
-  currentCharts.push(chart);
+  try {
+    const ctx = canvas.getContext('2d');
+    const chart = new Chart(ctx, config);
+    currentCharts.push(chart);
+  } catch (error) {
+    console.error('Error creating correlation chart:', error);
+  }
 }
 
 function createCategoricalChart(categoryColumn, valueColumn, colorScheme, animationDuration) {
   const chartId = `categorical_chart`;
   const container = document.createElement("div");
   container.className = "bg-white rounded-xl shadow-sm p-6 hover-lift lg:col-span-2";
-  
-  const canvas = document.createElement("canvas");
-  canvas.id = chartId;
   
   const header = document.createElement("div");
   header.className = "flex items-center justify-between mb-4";
@@ -610,8 +715,17 @@ function createCategoricalChart(categoryColumn, valueColumn, colorScheme, animat
     </div>
   `;
   
+  const chartContainer = document.createElement("div");
+  chartContainer.className = "chart-container";
+  chartContainer.style.height = "300px";
+  chartContainer.style.position = "relative";
+  
+  const canvas = document.createElement("canvas");
+  canvas.id = chartId;
+  
+  chartContainer.appendChild(canvas);
   container.appendChild(header);
-  container.appendChild(canvas);
+  container.appendChild(chartContainer);
   chartsDiv.appendChild(container);
   
   // Group data by category
@@ -619,14 +733,22 @@ function createCategoricalChart(categoryColumn, valueColumn, colorScheme, animat
   currentData.forEach(row => {
     const category = row[categoryColumn];
     const value = row[valueColumn];
-    if (category && !isNaN(value)) {
+    if (category && !isNaN(value) && isFinite(value)) {
       if (!groupedData[category]) groupedData[category] = [];
       groupedData[category].push(value);
     }
   });
   
-  // Calculate averages
   const categories = Object.keys(groupedData);
+  if (categories.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-gray-500">No valid categorical data found</p>
+      </div>
+    `;
+    return;
+  }
+  
   const averages = categories.map(cat => {
     const values = groupedData[cat];
     return values.reduce((sum, val) => sum + val, 0) / values.length;
@@ -675,8 +797,13 @@ function createCategoricalChart(categoryColumn, valueColumn, colorScheme, animat
     }
   };
   
-  const chart = new Chart(canvas, config);
-  currentCharts.push(chart);
+  try {
+    const ctx = canvas.getContext('2d');
+    const chart = new Chart(ctx, config);
+    currentCharts.push(chart);
+  } catch (error) {
+    console.error('Error creating categorical chart:', error);
+  }
 }
 
 function generateStatistics() {
@@ -687,7 +814,11 @@ function generateStatistics() {
   const numericColumns = getNumericColumns();
   
   numericColumns.slice(0, 6).forEach(column => {
-    const values = currentData.map(row => row[column]).filter(v => v !== null && !isNaN(v));
+    const values = currentData.map(row => row[column])
+      .filter(v => v !== null && !isNaN(v) && isFinite(v));
+    
+    if (values.length === 0) return;
+    
     const stats = calculateStatistics(values);
     
     const statCard = document.createElement("div");
@@ -695,6 +826,10 @@ function generateStatistics() {
     statCard.innerHTML = `
       <h4 class="font-semibold text-gray-900 mb-3">${column}</h4>
       <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Count:</span>
+          <span class="font-medium">${values.length}</span>
+        </div>
         <div class="flex justify-between">
           <span class="text-gray-600">Mean:</span>
           <span class="font-medium">${stats.mean.toFixed(2)}</span>
@@ -749,58 +884,74 @@ function refreshVisualizations() {
 }
 
 function toggleFullscreen() {
-  // Implementation for fullscreen mode
-  if (!isFullscreen) {
-    document.documentElement.requestFullscreen();
-    isFullscreen = true;
-    document.getElementById("fullscreenMode").innerHTML = '<i class="fas fa-compress mr-2"></i>Exit Fullscreen';
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => {
+      isFullscreen = true;
+      document.getElementById("fullscreenMode").innerHTML = '<i class="fas fa-compress mr-2"></i>Exit Fullscreen';
+    }).catch(err => {
+      console.log('Error attempting to enable fullscreen:', err);
+    });
   } else {
-    document.exitFullscreen();
-    isFullscreen = false;
-    document.getElementById("fullscreenMode").innerHTML = '<i class="fas fa-expand mr-2"></i>Fullscreen';
+    document.exitFullscreen().then(() => {
+      isFullscreen = false;
+      document.getElementById("fullscreenMode").innerHTML = '<i class="fas fa-expand mr-2"></i>Fullscreen';
+    });
   }
 }
 
 function downloadChart(chartId) {
-  const canvas = document.getElementById(chartId);
-  const link = document.createElement('a');
-  link.download = `${chartId}.png`;
-  link.href = canvas.toDataURL();
-  link.click();
-}
-
-function expandChart(chartId) {
-  // Implementation for expanding individual charts
-  showNotification("Chart expanded", "info");
+  try {
+    const canvas = document.getElementById(chartId);
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = `${chartId}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showNotification("Chart downloaded successfully", "success");
+    }
+  } catch (error) {
+    showNotification("Error downloading chart", "error");
+    console.error('Download error:', error);
+  }
 }
 
 function exportReport() {
-  // Create a comprehensive report
-  const report = {
-    summary: {
-      totalRecords: currentData.length,
-      totalColumns: Object.keys(currentData[0] || {}).length,
-      numericFields: getNumericColumns().length,
-      dataQuality: calculateDataQuality()
-    },
-    data: currentData,
-    statistics: {}
-  };
-  
-  // Add statistics for numeric columns
-  getNumericColumns().forEach(column => {
-    const values = currentData.map(row => row[column]).filter(v => v !== null && !isNaN(v));
-    report.statistics[column] = calculateStatistics(values);
-  });
-  
-  // Download as JSON
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `sst_analytics_report_${new Date().toISOString().split('T')[0]}.json`;
-  link.click();
-  
-  showNotification("Report exported successfully", "success");
+  try {
+    const report = {
+      timestamp: new Date().toISOString(),
+      summary: {
+        totalRecords: currentData.length,
+        totalColumns: Object.keys(currentData[0] || {}).length,
+        numericFields: getNumericColumns().length,
+        dataQuality: calculateDataQuality()
+      },
+      columns: Object.keys(currentData[0] || {}),
+      numericColumns: getNumericColumns(),
+      categoricalColumns: getCategoricalColumns(),
+      statistics: {},
+      sampleData: currentData.slice(0, 100) // Include sample data
+    };
+    
+    // Add statistics for numeric columns
+    getNumericColumns().forEach(column => {
+      const values = currentData.map(row => row[column])
+        .filter(v => v !== null && !isNaN(v) && isFinite(v));
+      if (values.length > 0) {
+        report.statistics[column] = calculateStatistics(values);
+      }
+    });
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `sst_analytics_report_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showNotification("Report exported successfully", "success");
+  } catch (error) {
+    showNotification("Error exporting report", "error");
+    console.error('Export error:', error);
+  }
 }
 
 function showLoading(show) {
@@ -837,17 +988,15 @@ function showNotification(message, type = "info") {
     </div>
   `;
   
-  document.getElementById("notifications").appendChild(notification);
-  
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    if (notification.parentElement) {
-      notification.remove();
-    }
-  }, 5000);
+  const notificationContainer = document.getElementById("notifications");
+  if (notificationContainer) {
+    notificationContainer.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 5000);
+  }
 }
-
-// Initialize the application
-document.addEventListener("DOMContentLoaded", function() {
-  console.log("SST Analytics Pro initialized");
-});
