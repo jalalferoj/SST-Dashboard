@@ -4,7 +4,9 @@
   "description": "Professional Data Visualization Platform - Transform CSV and Excel files into beautiful, interactive visualizations",
   "main": "index.html",
   "scripts": {
-    "dev": "npx http-server . -p 3000 -o",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
     "start": "npx http-server . -p 8080",
     "build": "echo 'Build complete - static files ready for deployment'",
     "preview": "npx http-server . -p 4173"
@@ -23,9 +25,10 @@
   "devDependencies": {
     "http-server": "^14.1.1"
   },
+  "dependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/sst-analytics-pro.git"
+    "url": "https://github.com/your-username/sst-analytics-pro.git"
   },
   "bugs": {
     "url": "https://github.com/your-username/sst-analytics-pro/issues"
