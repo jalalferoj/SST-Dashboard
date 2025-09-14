@@ -1,0 +1,35 @@
+{
+  "name": "sst-analytics-pro",
+  "version": "1.0.0",
+  "description": "Professional Data Visualization Platform - Transform CSV and Excel files into beautiful, interactive visualizations",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server . -p 3000 -o",
+    "start": "npx http-server . -p 8080",
+    "build": "echo 'Build complete - static files ready for deployment'",
+    "preview": "npx http-server . -p 4173"
+  },
+  "keywords": [
+    "data-visualization",
+    "analytics",
+    "dashboard",
+    "csv",
+    "excel",
+    "charts",
+    "statistics"
+  ],
+  "author": "SST Analytics",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/sst-analytics-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/sst-analytics-pro/issues"
+  },
+  "homepage": "https://github.com/your-username/sst-analytics-pro#readme"
+}
